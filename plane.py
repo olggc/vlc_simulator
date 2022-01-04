@@ -25,7 +25,8 @@ class Plane:
         for axis in points.keys():
             if axis in self.__constant_axis.keys():
                 continue
-            points[axis] = [k * self._sizes[axis] / self._number_of_divisions for k in
+            self.discretization = self._sizes[axis] / self._number_of_divisions
+            points[axis] = [k * self.discretization for k in
                             range(self._number_of_divisions + 1)]
         return points
 
@@ -57,6 +58,20 @@ class Plane:
     @property
     def area(self):
         return self.__area
+
+    @property
+    def diferential_area(self):
+        area = 1
+        for axis in self._sizes.keys():
+            if axis in self.__constant_axis.keys():
+                continue
+            size = self._sizes[axis] / self._number_of_divisions
+            area *= size
+        return area
+
+    @property
+    def sizes(self):
+        return self._sizes
 
     @property
     def free_axis(self):

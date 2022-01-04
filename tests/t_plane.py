@@ -1,4 +1,4 @@
-from luminaries import Luminaries
+from luminaries import Luminarie
 from plane import Plane
 
 number_of_divisions = 5
@@ -23,6 +23,6 @@ plane = Plane(number_of_divisions, sizes, constant_axis)
 assert plane.area == 9
 
 path = 'LEDblue.txt'
-lums = Luminaries(path)
+lums = Luminarie(path)
 x = 1
 

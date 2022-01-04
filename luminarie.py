@@ -27,7 +27,7 @@ class Keys(enum.Enum):
 
 
 @dataclass
-class Luminaries:
+class Luminarie:
     position: Dict[str, float]
     light_distribution: Dict
     wave_frequency: int
