@@ -44,9 +44,7 @@ class Plane:
         points_per_axis: List[List[float]] = [self._points[axis] for axis in free_axis]
 
         lum = {x: {y: 0 for y in points_per_axis[1]} for x in points_per_axis[0]}
-        plane_name = ','.join(free_axis)
-        plane_lum = {plane_name: lum}
-        return plane_lum
+        return lum
 
     def set_plane_iluminace(self, plane_iluminance):
         self.__incident_luminance = plane_iluminance
@@ -54,6 +52,10 @@ class Plane:
     @property
     def plane_iluminance(self):
         return self.__incident_luminance
+
+    @property
+    def points(self):
+        return self._points
 
     @property
     def area(self):

@@ -1,27 +1,29 @@
-from dataclasses import dataclass
+import matplotlib.pyplot as plt
+import numpy as np
+import seaborn as sb
+from matplotlib import cm
+from matplotlib.ticker import LinearLocator
+from ipywidgets import interactive
 from math import acos, atan, degrees, cos, radians, sin, pi, sqrt, asin, atan2
-from typing import List, Dict
 from numpy import sign
 from luminarie import Luminarie
-from plane import Plane, Axis
-from wall import Wall
-from sensor import Sensor
-from typing import Optional
+from plane import Axis
 from ambient import Ambient
 
 
 class Simulator:
-    def __init__(self, luminaries: List[Luminarie], plane: Plane, walls: Optional[List[Wall]], sensor: Sensor,
-                 sample_frequency: Optional[int], ambient: Ambient):
-        self.horizontal_angles_reach = []
-        self.vertical_angles_reach = []
-        self.pair_angles_reach = []
-        self.walls = walls
-        self.luminaries = luminaries
-        self.plane = plane
+    def __init__(self, ambient: Ambient):
+        self.horizontal_angles_reach = set()
+        self.vertical_angles_reach = set()
+        self.pair_angles_reach = set()
+        self.walls = ambient.walls
+        self.with_reflection = any(w.refletance > 0 for w in self.walls)
+        self.luminaries = ambient.luminaries
+        self.plane = ambient.floor
         self.ambient = ambient
-        self.sample_frequency = sample_frequency
-        self.sensor = sensor
+        self.sample_frequency = ambient.sample_frequency
+        self.sensor = ambient.sensor
+        self.results = dict()
         self.elapsed_time_vector = self._get_elapsed_time()
 
     # @staticmethod
@@ -30,7 +32,7 @@ class Simulator:
         dist = (dx ** 2) + (dy ** 2) + (dz ** 2)
         dist = sqrt(dist)
         if dist == 0:
-            return None, None
+            return 0, None
         a = degrees(asin(dz / dist))
         if self.ambient.refletance_aperture is None:
             return dist, a
@@ -38,10 +40,10 @@ class Simulator:
             return None, None
         return dist, a
 
-    def get_angles(self, x: float, y: float, lumie: Luminarie, sensor: Sensor):
+    def get_angles(self, x: float, y: float, lumie: Luminarie):
         dx = lumie.position['x'] - x
         dy = lumie.position['y'] - y
-        dz = lumie.position['z'] - sensor.position['z']
+        dz = lumie.position['z'] - self.ambient.floor_level['z']
         dist = (dx ** 2) + (dy ** 2) + (dz ** 2)
         dist = sqrt(dist)
 
@@ -56,54 +58,49 @@ class Simulator:
         t_angles = [key for key in lumie.light_distribution[p].keys()]
         _, idx_t = min([(abs(t - t_angle), n) for n, t_angle in enumerate(t_angles)], key=lambda a: a[0])
         t = t_angles[idx_t]
-        self.vertical_angles_reach.append(t)
-        self.horizontal_angles_reach.append(p)
-        self.pair_angles_reach.append((t, p))
+        self.vertical_angles_reach.add(t)
+        self.horizontal_angles_reach.add(p)
+        self.pair_angles_reach.add((t, p))
         return p, t, dist
 
-    def __calculate_direct_iluminance(self, lum: Luminarie, plane: Plane, sensor: Sensor, time: float):
-
-        plane_direct_iluminance = {x: {y: 0 for y in plane.points['y']} for x in plane.points['x']}
-        factor = 0  # 0.5 * (sign(sin(2 * pi * time * lum.wave_frequency)) + 1) # uncomment this to temporal simulation
-        for x in plane.points['x']:
-            for y in plane.points['y']:
-                phi, theta, dist = self.get_angles(x, y, lum, sensor)
-                if phi > lum.max_phi or theta > lum.max_theta:
-                    continue
-                ilu = lum.light_distribution[phi][theta]
-                e = ilu / (dist ** 2)
-                plane_direct_iluminance[x][y] = e * (1 + factor)
-
-        return plane_direct_iluminance
-
-    def __calculate_reflected_iluminance(self, wall: Wall, x, y, time):
-        constant_axis, c = wall.plane.constant_axis
-        factor = 0  # 0.5 * (sign(sin(2 * pi * time * lum.wave_frequency)) + 1) # uncomment this to temporal simulation
-        wall_ilu = wall.wall_iluminace[time]
+    def __calculate_direct_iluminance(self, x, y, time: float) -> float:
         e = 0
-        for a in wall_ilu.keys():
-            for b in wall_ilu[a].keys():
-                if constant_axis is Axis.X.value:
-                    dx = c - x
-                    dy = a - y
-                    dz = b - self.ambient.floor_level['z']
-                elif constant_axis is Axis.Y.value:
-                    dx = a - x
-                    dy = c - y
-                    dz = b - self.ambient.floor_level['z']
-                elif constant_axis is Axis.Z.value:
-                    dx = a - x
-                    dy = b - y
-                    dz = c - self.ambient.floor_level['z']
-
-                if dz == self.ambient.floor_level['z']:
-                    continue
-                dist, alpha = self._get_angles(dx, dy, dz)
-                if dist is None:
-                    continue
-                ilu = wall_ilu[a][b]
-                e += ilu * cos(radians(alpha)) * (1 + factor) / (4 * pi * (dist ** 2))
+        for lum in self.luminaries:
+            factor = 0.5 * ((sin(2 * pi * time * lum.wave_frequency)))
+            phi, theta, dist = self.get_angles(x, y, lum)
+            if phi > lum.max_phi or theta > lum.max_theta:
+                continue
+            ilu = lum.light_distribution[phi][theta]
+            ilu = ilu / (dist ** 2)
+            e += ilu * (1 + factor)
         return e
+
+    def __calculate_reflected_iluminance(self, x, y, time):
+        e = 0
+        for wall in self.walls:
+            constant_axis, c = wall.plane.constant_axis
+            wall_ilu = wall.wall_iluminace[time]
+            for a in wall_ilu.keys():
+                for b in wall_ilu[a].keys():
+                    if constant_axis is Axis.X.value:
+                        dx = c - x
+                        dy = a - y
+                        dz = b - self.ambient.floor_level['z']
+                    elif constant_axis is Axis.Y.value:
+                        dx = a - x
+                        dy = c - y
+                        dz = b - self.ambient.floor_level['z']
+                    elif constant_axis is Axis.Z.value:
+                        dx = a - x
+                        dy = b - y
+                        dz = c - self.ambient.floor_level['z']
+
+                    dist, alpha = self._get_angles(dx, dy, dz)
+                    if dist == 0:
+                        continue
+                    ilu = wall_ilu[a][b]
+                    e += ilu * cos(radians(alpha)) / (4 * pi * (dist ** 2))
+            return e
 
     def _get_elapsed_time(self):
         if self.sample_frequency is None:
@@ -122,26 +119,30 @@ class Simulator:
     def simulate(self):
         simulation_light_distribution = {dt: None for dt in self.elapsed_time_vector}
         for dt in self.elapsed_time_vector:
-            for lum in self.luminaries:
-                plane_iluminance = self.__calculate_direct_iluminance(lum, self.plane, self.sensor, dt)
-                self.plane.set_plane_iluminace(plane_iluminance)
-                if simulation_light_distribution[dt] is None:
-                    simulation_light_distribution[dt] = plane_iluminance
-                else:
-                    for x in simulation_light_distribution[dt].keys():
-                        for y in simulation_light_distribution[dt][x].keys():
-                            point_ilu = plane_iluminance[x][y]
-                            simulation_light_distribution[dt][x][y] += point_ilu
-            reflected_light_distribution = {a: {b: 0 for b in self.plane.points['x']} for a in self.plane.points['y']}
-            simulation_reflected_light_distribution = {dt: reflected_light_distribution.copy() for dt in self.elapsed_time_vector}
-            for wall in self.walls:
-                for x in simulation_light_distribution[dt].keys():
-                    for y in simulation_light_distribution[dt][x].keys():
-                        reflected_light = self.__calculate_reflected_iluminance(wall, x, y, dt)
-                        reflected_light_distribution[x][y] += reflected_light
-                        simulation_reflected_light_distribution[dt][x][y] += reflected_light
-            for time in simulation_light_distribution.keys():
-                for x in simulation_light_distribution[time].keys():
-                    for y in simulation_light_distribution[time][x].keys():
-                        simulation_light_distribution[dt][x][y] += simulation_reflected_light_distribution[dt][x][y]
+            plane_dict = {x: {y: 0 for y in self.plane.points['y']} for x in self.plane.points['x']}
+            for x in self.plane.plane_iluminance.keys():
+                for y in self.plane.plane_iluminance[x].keys():
+                    plane_dict[x][y] += self.__calculate_direct_iluminance(x, y, dt)
+                    if not self.with_reflection:
+                        continue
+                    plane_dict[x][y] += self.__calculate_reflected_iluminance(x, y, dt)
+            simulation_light_distribution[dt] = plane_dict
+        self.results = simulation_light_distribution
         return simulation_light_distribution
+
+    def f(self, dt):
+        z_axis = np.array([self.results[dt][x][y]
+                           for x in self.plane.points['x']
+                           for y in self.plane.points['y']])
+        z_axis = z_axis.reshape((len(self.plane.points['x']), len(self.plane.points['y'])))
+        return z_axis.T
+
+    def plotting(self, dt=0):
+        z_axis = self.f(dt)
+        ax = sb.heatmap(z_axis)
+        ax.invert_yaxis()
+        plt.show()
+
+    def animate(self):
+        for dt in self.results.keys():
+            self.plotting(dt)

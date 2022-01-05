@@ -1,6 +1,7 @@
 from dataclasses import dataclass
-from math import sqrt, acos, degrees, atan, radians, cos, atan2
+from math import sqrt, acos, degrees, atan2, sin, pi
 from typing import Dict, Optional, List
+from numpy import sign
 
 from luminarie import Luminarie
 from plane import Plane, Axis
@@ -11,7 +12,8 @@ class Wall:
     __plane: Plane
     __iluminance_per_point: Dict
 
-    def __init__(self, plane: Plane, luminaire: List[Luminarie], refletance: Optional[float] = None, sample_frequency: Optional[int] = None):
+    def __init__(self, plane: Plane, luminaire: List[Luminarie], refletance: Optional[float] = None,
+                 sample_frequency: Optional[int] = None):
         self.__sample_frequency = None if sample_frequency is None else sample_frequency
         self.__ellapsed_time_vector = self.__get_elapsed_time([lum.wave_frequency for lum in luminaire])
         self.__refletance = 0 if refletance is None else refletance
@@ -54,26 +56,30 @@ class Wall:
         return p, t, dist
 
     def __calculate_direct_iluminance(self, lum: Luminarie, x: float, y: float, z: float, time: float):
-        factor = 0  # 0.5 * (sign(sin(2 * pi * time * lum.wave_frequency)) + 1) # uncomment this to temporal simulation
+        w = pi * time * lum.wave_frequency
+        factor = 0.5 * sign(sin(2 * w))  # uncomment this to temporal simulation
         phi, theta, dist = self.get_angles(x, y, z, lum)
         if phi > lum.max_phi or theta > lum.max_theta:
             return 0
         ilu = lum.light_distribution[phi][theta]
         scale = self.refletance * self.plane.diferential_area
         e = ilu * scale / (dist ** 2)
-        return e*(1 + factor)
+        return e * (1 + factor)
 
     def __set_wall_iluminance(self, luminarie: List[Luminarie]):
         free_axis = self.plane.free_axis
         constant_axis, c = self.plane.constant_axis
         axis_a = free_axis[0]
         axis_b = free_axis[1]
-        iluminance_dict = {a: {b: 0 for b in self.plane.points[axis_b]} for a in self.plane.points[axis_a]}
-        timed_iluminance_dict = {dt: iluminance_dict.copy() for dt in self.__ellapsed_time_vector}
+        shift = self.plane.discretization / 2
+        timed_iluminance_dict = {dt: None for dt in self.__ellapsed_time_vector}
         for dt in timed_iluminance_dict:
+            iluminance_dict = {
+                a + shift: {b + shift: 0 for b in self.plane.points[axis_b] if b < self.plane.sizes[axis_b]}
+                for a in self.plane.points[axis_a] if a < self.plane.sizes[axis_b]}
             for lum in luminarie:
-                for a in self.plane.points[axis_a]:
-                    for b in self.plane.points[axis_b]:
+                for a in iluminance_dict.keys():
+                    for b in iluminance_dict[a].keys():
                         if constant_axis is Axis.X.value:
                             x = c
                             y = a
@@ -87,7 +93,8 @@ class Wall:
                             y = b
                             z = c
 
-                        timed_iluminance_dict[dt][a][b] += self.__calculate_direct_iluminance(lum, x, y, z, dt)
+                        iluminance_dict[a][b] += self.__calculate_direct_iluminance(lum, x, y, z, dt)
+            timed_iluminance_dict[dt] = iluminance_dict
         return timed_iluminance_dict
 
     @property

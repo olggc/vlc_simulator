@@ -24,12 +24,15 @@ class Ambient:
     @property
     def floor_level(self):
         return self.__floor_level
+
     @property
     def refletance_aperture(self):
         return self.__refletance_aperture
+
     @property
     def room_sizes(self):
         return self.__room_sizes
+
     @property
     def luminaries(self):
         return self.__lumies
@@ -65,7 +68,8 @@ class Ambient:
         for const_axis in ambient_settings['ambient']['walls']:
             plane = Plane(number_of_divisions=num, sizes=self.room_sizes, constant_axis=const_axis)
             wall = Wall(plane=plane, luminaire=self.luminaries,
-                        refletance=ambient_settings['ambient']['walls_refletance'])
+                        refletance=ambient_settings['ambient']['walls_refletance'],
+                        sample_frequency=self.__sample_frequency)
             self.__walls.append(wall)
 
         self.__sensor = Sensor(position=ambient_settings['sensor_position'])
