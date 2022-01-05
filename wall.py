@@ -63,7 +63,7 @@ class Wall:
             return 0
         ilu = lum.light_distribution[phi][theta]
         scale = self.refletance * self.plane.diferential_area
-        e = ilu * scale / (dist ** 2)
+        e = ilu * scale / (4 * pi * (dist ** 2))
         return e * (1 + factor)
 
     def __set_wall_iluminance(self, luminarie: List[Luminarie]):

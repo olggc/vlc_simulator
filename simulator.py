@@ -99,7 +99,7 @@ class Simulator:
                     if dist == 0:
                         continue
                     ilu = wall_ilu[a][b]
-                    e += ilu * cos(radians(alpha)) / (4 * pi * (dist ** 2))
+                    e += ilu * cos(radians(alpha)) / (dist ** 2)
             return e
 
     def _get_elapsed_time(self):
