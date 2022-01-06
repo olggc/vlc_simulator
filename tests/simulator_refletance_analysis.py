@@ -13,7 +13,7 @@ for r in range(5, 6, 1):
             'floor_level': 0,
             'divisions_number': r,
             'sample_frequency': None,
-            'walls_refletance': 0.2,
+            'walls_refletance': 1,
             'refletance_aperture': None,
             'walls': [
                 {'x': 0},
@@ -26,7 +26,7 @@ for r in range(5, 6, 1):
             'positions': [
                 {'x': 0.5, 'y': 0.5, 'z': 1}
             ],
-            'ies_file_path': 'LEDblue.txt',
+            'ies_file_path': 'UniformLamp.txt',
             'modulation_frequencies': [2000]
         },
         'sensor_position': {'x': 0, 'y': 0, 'z': 0}
