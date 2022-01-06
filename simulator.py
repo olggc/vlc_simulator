@@ -1,11 +1,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
 import seaborn as sb
-from matplotlib import cm
-from matplotlib.ticker import LinearLocator
-from ipywidgets import interactive
-from math import acos, atan, degrees, cos, radians, sin, pi, sqrt, asin, atan2
-from numpy import sign
+from math import acos, degrees, cos, radians, sin, pi, sqrt, asin, atan2
 from luminarie import Luminarie
 from plane import Axis
 from ambient import Ambient
@@ -25,6 +21,9 @@ class Simulator:
         self.sensor = ambient.sensor
         self.results = dict()
         self.elapsed_time_vector = self._get_elapsed_time()
+        # for idx in range(len(self.walls) - 1):
+        #     if self.walls[idx] != self.walls[idx + 1]:
+        #         assert False
 
     # @staticmethod
 
@@ -77,9 +76,10 @@ class Simulator:
 
     def __calculate_reflected_iluminance(self, x, y, time):
         e = 0
-        for wall in self.walls:
-            constant_axis, c = wall.plane.constant_axis
-            wall_ilu = wall.wall_iluminace[time]
+        for index in range(len(self.walls)):
+            w = self.walls[index]
+            constant_axis, c = self.walls[index].constant_axis
+            wall_ilu = self.walls[index].wall_iluminace[time]
             for a in wall_ilu.keys():
                 for b in wall_ilu[a].keys():
                     if constant_axis is Axis.X.value:
@@ -90,17 +90,13 @@ class Simulator:
                         dx = a - x
                         dy = c - y
                         dz = b - self.ambient.floor_level['z']
-                    elif constant_axis is Axis.Z.value:
-                        dx = a - x
-                        dy = b - y
-                        dz = c - self.ambient.floor_level['z']
 
                     dist, alpha = self._get_angles(dx, dy, dz)
                     if dist == 0:
                         continue
                     ilu = wall_ilu[a][b]
                     e += ilu * cos(radians(alpha)) / (dist ** 2)
-            return e
+        return e
 
     def _get_elapsed_time(self):
         if self.sample_frequency is None:
@@ -122,7 +118,9 @@ class Simulator:
             plane_dict = {x: {y: 0 for y in self.plane.points['y']} for x in self.plane.points['x']}
             for x in self.plane.plane_iluminance.keys():
                 for y in self.plane.plane_iluminance[x].keys():
-                    plane_dict[x][y] += self.__calculate_direct_iluminance(x, y, dt)
+                    ilu = self.__calculate_direct_iluminance(x, y, dt)
+                    plane_dict[x][y] += ilu
+                    self.plane.plane_iluminance[x][y] += ilu
                     if not self.with_reflection:
                         continue
                     plane_dict[x][y] += self.__calculate_reflected_iluminance(x, y, dt)

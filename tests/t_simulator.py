@@ -9,7 +9,7 @@ ambient_sets = {
         'floor_level': 0,
         'divisions_number': 4,
         'sample_frequency': 100000,
-        'walls_refletance': 0,
+        'walls_refletance': 0.2,
         'refletance_aperture': None,
         'walls': [
             {'x': 0},
@@ -52,7 +52,7 @@ results_dialux_20 = np.array([14, 16, 18, 17, 16,
 r = results[0]
 key_values = [(x, y) for x in r.keys() for y in r[x].keys()]
 result_simulator = np.array([round(r[point[0]][point[1]]) for point in key_values])
-dialux_results = results_dialux
+dialux_results = results_dialux_20
 erro1 = np.subtract(dialux_results, result_simulator)
 m_erro1 = [abs(e) / dialux_results[n] for n, e in enumerate(erro1)]
 erro1 = sum(m_erro1) / len(erro1)

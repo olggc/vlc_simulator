@@ -81,8 +81,7 @@ class Plane:
 
     @property
     def constant_axis(self):
-        constant = [axis.value for axis in Axis if axis.value in self.__constant_axis.keys()]
-        return constant[0], self.__constant_axis[constant[0]]
+        return self.__constant_axis
 
     @property
     def iluminance(self):

@@ -18,11 +18,17 @@ class Wall:
         self.__ellapsed_time_vector = self.__get_elapsed_time([lum.wave_frequency for lum in luminaire])
         self.__refletance = 0 if refletance is None else refletance
         self.__plane = plane
+        self.__constant_axis = plane.constant_axis
         self.__iluminance_per_point = self.__set_wall_iluminance(luminaire) if refletance is not None else None
 
     @property
     def refletance(self):
         return self.__refletance
+
+    @property
+    def constant_axis(self):
+        constant = [axis.value for axis in Axis if axis.value in self.__constant_axis.keys()]
+        return constant[0], self.__constant_axis[constant[0]]
 
     def __get_elapsed_time(self, frequencies: List[int]):
         if self.__sample_frequency is None:
@@ -68,7 +74,7 @@ class Wall:
 
     def __set_wall_iluminance(self, luminarie: List[Luminarie]):
         free_axis = self.plane.free_axis
-        constant_axis, c = self.plane.constant_axis
+        constant_axis, c = self.constant_axis
         axis_a = free_axis[0]
         axis_b = free_axis[1]
         shift = self.plane.discretization / 2
@@ -104,3 +110,13 @@ class Wall:
     @property
     def wall_iluminace(self):
         return self.__iluminance_per_point
+
+    def __eq__(self, other: "Wall"):
+        for dt in self.wall_iluminace.keys():
+            for x in self.wall_iluminace[dt].keys():
+                for y in self.wall_iluminace[dt][x].keys():
+                    a = self.wall_iluminace[dt][x][y]
+                    b = other.wall_iluminace[dt][x][y]
+                    if a != b:
+                        return False
+        return True
