@@ -7,6 +7,7 @@ from sensor import Sensor
 
 class Ambient:
     def __init__(self, ambient_settings):
+        self.__total_time = None
         self.__floor_level = {'z': 0}
         self.__sample_frequency = None
         self.__room_sizes = None
@@ -49,7 +50,12 @@ class Ambient:
     def walls(self):
         return self.__walls
 
+    @property
+    def total_time(self):
+        return self.__total_time
+
     def __generate_ambient(self, ambient_settings):
+        self.__total_time = ambient_settings['total_simulation_time']
         aperture = ambient_settings['ambient']['refletance_aperture']
         self.__refletance_aperture = aperture if aperture is not None else self.__refletance_aperture
         self.__sample_frequency = ambient_settings['ambient']['sample_frequency']
@@ -69,7 +75,7 @@ class Ambient:
             plane = Plane(number_of_divisions=num, sizes=self.room_sizes, constant_axis=const_axis)
             wall = Wall(plane=plane, luminaire=self.luminaries,
                         refletance=ambient_settings['ambient']['walls_refletance'],
-                        sample_frequency=self.__sample_frequency)
+                        sample_frequency=self.__sample_frequency, total_time=self.total_time)
             self.__walls.append(wall)
 
         self.__sensor = Sensor(position=ambient_settings['sensor_position'])

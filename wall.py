@@ -13,7 +13,8 @@ class Wall:
     __iluminance_per_point: Dict
 
     def __init__(self, plane: Plane, luminaire: List[Luminarie], refletance: Optional[float] = None,
-                 sample_frequency: Optional[int] = None):
+                 sample_frequency: Optional[int] = None, total_time=None):
+        self.__total_time = total_time
         self.__sample_frequency = None if sample_frequency is None else sample_frequency
         self.__ellapsed_time_vector = self.__get_elapsed_time([lum.wave_frequency for lum in luminaire])
         self.__refletance = 0 if refletance is None else refletance
@@ -34,11 +35,13 @@ class Wall:
         if self.__sample_frequency is None:
             return [0]
         dt = 1 / self.__sample_frequency
-        freq = min(frequencies)
-        t = 1 / freq
-
+        if self.__total_time is None:
+            freq = min(frequencies)
+            t = 1 / freq
+        else:
+            t = self.__total_time
         n = round(t / dt)
-        time = [k * dt for k in range(n)]
+        time = [k * dt for k in range(n + 1)]
         return time
 
     def get_angles(self, x: float, y: float, z: float, lumie: Luminarie):

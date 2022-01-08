@@ -9,6 +9,7 @@ from ambient import Ambient
 
 class Simulator:
     def __init__(self, ambient: Ambient):
+        self.total_time = ambient.total_time if ambient.total_time is not None else None
         self.horizontal_angles_reach = set()
         self.vertical_angles_reach = set()
         self.pair_angles_reach = set()
@@ -105,11 +106,14 @@ class Simulator:
         for lum in self.luminaries:
             frequencies.append(lum.wave_frequency)
         dt = 1 / self.sample_frequency
-        freq = min(frequencies)
-        t = 1 / freq
+        if self.total_time is None:
+            freq = min(frequencies)
+            t = 1 / freq
+        else:
+            t = self.total_time
 
         n = round(t / dt)
-        time = [k * dt for k in range(n)]
+        time = [k * dt for k in range(n + 1)]
         return time
 
     def simulate(self):
@@ -118,12 +122,15 @@ class Simulator:
             plane_dict = {x: {y: 0 for y in self.plane.points['y']} for x in self.plane.points['x']}
             for x in self.plane.plane_iluminance.keys():
                 for y in self.plane.plane_iluminance[x].keys():
+                    print(f'Calculating Iluminance for point x = {x}, y = {y} at time = {dt}\n')
                     ilu = self.__calculate_direct_iluminance(x, y, dt)
                     plane_dict[x][y] += ilu
                     self.plane.plane_iluminance[x][y] += ilu
+                    print(f'Direct Iluminace = {ilu}')
                     if not self.with_reflection:
                         continue
                     plane_dict[x][y] += self.__calculate_reflected_iluminance(x, y, dt)
+                    print(f'Indirect Iluminace = {ilu}')
             simulation_light_distribution[dt] = plane_dict
         self.results = simulation_light_distribution
         return simulation_light_distribution
