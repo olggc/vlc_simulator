@@ -78,4 +78,6 @@ class Ambient:
                         sample_frequency=self.__sample_frequency, total_time=self.total_time)
             self.__walls.append(wall)
 
-        self.__sensor = Sensor(position=ambient_settings['sensor_position'])
+        self.__sensor = Sensor(position=ambient_settings['sensor']['position'],
+                               filter_parameters=ambient_settings['sensor']['filter_parameter'],
+                               sample_rate=self.__sample_frequency)

@@ -20,7 +20,7 @@ class Wall:
         self.__refletance = 0 if refletance is None else refletance
         self.__plane = plane
         self.__constant_axis = plane.constant_axis
-        self.__iluminance_per_point = self.__set_wall_iluminance(luminaire) if refletance is not None else None
+        self.__iluminance_per_point = self.__set_wall_iluminance(luminaire) if refletance is not 0 else None
 
     @property
     def refletance(self):

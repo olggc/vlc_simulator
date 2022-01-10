@@ -66,7 +66,7 @@ class Simulator:
     def __calculate_direct_iluminance(self, x, y, time: float) -> float:
         e = 0
         for lum in self.luminaries:
-            factor = 0.5 * ((sin(2 * pi * time * lum.wave_frequency)))
+            factor = 0.5 * np.sign(sin(2 * pi * time * lum.wave_frequency))
             phi, theta, dist = self.get_angles(x, y, lum)
             if phi > lum.max_phi or theta > lum.max_theta:
                 continue
