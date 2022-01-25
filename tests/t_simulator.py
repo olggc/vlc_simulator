@@ -1,5 +1,8 @@
+from math import sqrt
+
+import matplotlib.pyplot as plt
+from matplotlib import cm
 import numpy as np
-from matplotlib import pyplot as plt
 import json
 from ambient import Ambient
 from simulator import Simulator
@@ -16,7 +19,7 @@ ambient_sets = {
         'floor_level': 0,
         'divisions_number': 4,
         'sample_frequency': 100000,
-        'walls_refletance': 0.0,
+        'walls_refletance': 0.1,
         'refletance_aperture': None,
         'walls': [
             {'x': 0},
@@ -41,19 +44,24 @@ ambient_sets = {
 }
 id = str(refletance_to_id_converter[str(ambient_sets['ambient']['walls_refletance'])])
 dialux_results = dialux_data_dict[id]
+
+## SIMULAÇÃO
 ambient = Ambient(ambient_sets)
 simulator = Simulator(ambient)
 results = simulator.simulate()
 
 # simulator.animate()  ## descomentar para ver 'heatmap' animation
 
-r = results[0]
+# comparação ponto a ponto
+r = results[0]  # resultado estático par a t = 0
 key_values = [(x, y) for x in r.keys() for y in r[x].keys()]
-result_simulator = np.array([round(r[point[0]][point[1]]) for point in key_values])
-erro1 = np.subtract(dialux_results, result_simulator)
-m_erro1 = [abs(e) / dialux_results[n] for n, e in enumerate(erro1)]
-erro1 = sum(m_erro1) / len(erro1)
+result_simulator = np.array([r[point[0]][point[1]] for point in key_values])
+erro1_list = np.subtract(dialux_results, result_simulator)
+m_erro1 = [abs(e) / dialux_results[n] for n, e in enumerate(erro1_list)]
+erro1 = sum(m_erro1) / len(erro1_list)
 x = [n + 1 for n in range(len(result_simulator))]
+sqrt_x = int(sqrt(len(x)))
+
 
 l1 = plt.plot(x, dialux_results)
 l2 = plt.plot(x, result_simulator)
@@ -63,13 +71,15 @@ plt.ylabel('Iluminance')
 plt.show()
 print('erro: ', erro1)
 
-## descomentar para regerar os resultados temporais
-# temporal_results = {x: {y: [] for y in results[0][0].keys()} for x in results[0].keys()}
-#
-# for dt in results.keys():
-#     for x in results[dt].keys():
-#         for y in results[dt][x].keys():
-#             temporal_results[x][y].append(results[dt][x][y])
-#
-# with open('temporal_results.json', 'w') as f:
-#     json.dump(temporal_results, f)
+fig, ax = plt.subplots(subplot_kw={"projection": "3d"})
+abs_erro = np.array([abs(e) for e in erro1_list])
+E = abs_erro.reshape(sqrt_x, sqrt_x)
+X = np.arange(0, 5, 1)
+Y = np.arange(0, 5, 1)
+X, Y = np.meshgrid(X, Y)
+surf = ax.plot_surface(X, Y, E, cmap=cm.coolwarm,
+                       linewidth=0, antialiased=False)
+fig.colorbar(surf, shrink=0.5, aspect=5)
+
+plt.show()
+
