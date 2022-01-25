@@ -3,6 +3,7 @@ import time
 import matplotlib.pyplot as plt
 import numpy as np
 import seaborn as sb
+from matplotlib import cm
 from math import acos, degrees, cos, radians, sin, pi, sqrt, asin, atan2
 from luminarie import Luminarie
 from plane import Axis
@@ -147,12 +148,23 @@ class Simulator:
         z_axis = z_axis.reshape((len(self.plane.points['x']), len(self.plane.points['y'])))
         return z_axis.T
 
-    def plotting(self, dt=0):
+    def plotting(self, dt=0, graph_type='surface'):
         z_axis = self.f(dt)
-        ax = sb.heatmap(z_axis)
-        ax.invert_yaxis()
-        plt.show()
+        if graph_type == 'heatmap':
+            ax = sb.heatmap(z_axis)
+            ax.invert_yaxis()
+            plt.show()
+        if graph_type == 'surface':
+            fig, ax = plt.subplots(subplot_kw={"projection": "3d"})
+            n = len(self.plane.points['x'])
+            X = np.arange(0, n, 1)
+            Y = np.arange(0, n, 1)
+            X, Y = np.meshgrid(X, Y)
+            surf = ax.plot_surface(X, Y, z_axis, cmap=cm.coolwarm,
+                                   linewidth=0, antialiased=False)
+            fig.colorbar(surf, shrink=0.5, aspect=5)
 
+            plt.show()
     def animate(self):
         for dt in self.results.keys():
             self.plotting(dt)
