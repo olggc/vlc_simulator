@@ -1,3 +1,5 @@
+import time
+
 import matplotlib.pyplot as plt
 import numpy as np
 import seaborn as sb
@@ -100,7 +102,7 @@ class Simulator:
         return e
 
     def _get_elapsed_time(self):
-        if self.sample_frequency is None:
+        if self.sample_frequency is None or self.total_time is None:
             return [0]
         frequencies = []
         for lum in self.luminaries:
@@ -113,10 +115,11 @@ class Simulator:
             t = self.total_time
 
         n = round(t / dt)
-        time = [k * dt for k in range(n + 1)]
-        return time
+        tau = [k * dt for k in range(n + 1)]
+        return tau
 
     def simulate(self):
+        start_time = time.time()
         simulation_light_distribution = {dt: None for dt in self.elapsed_time_vector}
         for dt in self.elapsed_time_vector:
             plane_dict = {x: {y: 0 for y in self.plane.points['y']} for x in self.plane.points['x']}
@@ -132,6 +135,8 @@ class Simulator:
                     plane_dict[x][y] += self.__calculate_reflected_iluminance(x, y, dt)
                     print(f'Indirect Iluminace = {ilu}')
             simulation_light_distribution[dt] = plane_dict
+        end_time = time.time()
+        print(f'Execution time: {end_time - start_time}')
         self.results = simulation_light_distribution
         return simulation_light_distribution
 

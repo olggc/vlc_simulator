@@ -10,23 +10,20 @@ if __name__ == "__main__":
     import matplotlib.pyplot as plt
     from scipy.signal import freqz
 
-    filter_settings = {'filter_1': {'low_cut': 1900.0,
-                                    'high_cut': 2100.0,
+    filter_settings = {'filter_1': {'low_cut': 1500.0,
+                                    'high_cut': 2500.0,
                                     'order': 6},
-                       'filter_2': {'low_cut': 2900.0,
-                                    'high_cut': 3100.0,
+                       'filter_2': {'low_cut': 2500.0,
+                                    'high_cut': 3500.0,
                                     'order': 6},
-                       'filter_3': {'low_cut': 3900.0,
-                                    'high_cut': 4100.0,
-                                    'order': 6},
-                       'filter_4': {'low_cut': 4900.0,
-                                    'high_cut': 5100.0,
+                       'filter_3': {'low_cut': 3500.0,
+                                    'high_cut': 4500.0,
                                     'order': 6}}
     with open('temporal_results.json') as fp:
         sinal = json.load(fp)
     # Sample rate and desired cutoff frequencies (in Hz).
     raw_signal = sinal[str(0.0)][str(0.0)][:-1]
-    fs = 25000.0
+    fs = 100000.0
     filters = []
     for filter_id in filter_settings.keys():
         filters.append(Filter(filter_parameters=filter_settings[filter_id],
