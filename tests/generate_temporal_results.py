@@ -5,6 +5,10 @@ import json
 from ambient import Ambient
 from simulator import Simulator
 scale_factor = 3
+
+data_dir = 'data/'
+filename = 'temporal_results.json'
+
 ambient_sets = {
     'total_simulation_time': None,
     'ambient': {
@@ -12,7 +16,7 @@ ambient_sets = {
         'floor_level': 0,
         'divisions_number': 10,
         'sample_frequency': 100000,
-        'walls_refletance': 0.1,
+        'walls_refletance': 0.0,
         'refletance_aperture': None,
         'walls': [
             {'x': 0},
@@ -27,7 +31,7 @@ ambient_sets = {
             {'x': scale_factor * 0.24, 'y': scale_factor * 0.74, 'z': scale_factor * 1},
             {'x': scale_factor * 0.74, 'y': scale_factor * 0.74, 'z': scale_factor * 1}
         ],
-        'ies_file_path': 'LampPeq.txt',
+        'ies_file_path': data_dir + 'LampPeq.txt',
         'modulation_frequencies': [2000, 3000, 4000]
     },
     'sensor': {'position': {'x': 0, 'y': 0, 'z': 0},
@@ -48,5 +52,5 @@ for dt in results.keys():
         for y in results[dt][x].keys():
             temporal_results[x][y].append(results[dt][x][y])
 
-with open('temporal_results.json', 'w') as f:
+with open(data_dir + filename, 'w') as f:
     json.dump(temporal_results, f)

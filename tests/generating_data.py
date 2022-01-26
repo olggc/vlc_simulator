@@ -10,6 +10,8 @@ if __name__ == "__main__":
     import matplotlib.pyplot as plt
     from scipy.signal import freqz
 
+    data_dir = 'data/'
+    output_file_name = 'output.json'
     filter_settings = {'filter_1': {'low_cut': 1500.0,
                                     'high_cut': 2500.0,
                                     'order': 6},
@@ -19,7 +21,7 @@ if __name__ == "__main__":
                        'filter_3': {'low_cut': 3500.0,
                                     'high_cut': 4500.0,
                                     'order': 6}}
-    with open('temporal_results.json') as fp:
+    with open('data/temporal_results.json') as fp:
         sinal = json.load(fp)
     # Sample rate and desired cutoff frequencies (in Hz).
     plane = [] * (len(sinal.keys()) ** 2)
@@ -45,5 +47,5 @@ if __name__ == "__main__":
                 amp = max(abs(yf))
                 output[f.filter_id].append(amp)
 
-    with open('output.json', 'w') as f:
+    with open(data_dir + output_file_name, 'w') as f:
         json.dump(output, f)

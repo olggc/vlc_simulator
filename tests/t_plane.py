@@ -22,7 +22,7 @@ plane = Plane(number_of_divisions, sizes, constant_axis)
 
 assert plane.area == 9
 
-path = 'LEDblue.txt'
+path = 'data/LEDblue.txt'
 lums = Luminarie(path)
 x = 1
 

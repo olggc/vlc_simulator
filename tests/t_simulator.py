@@ -8,7 +8,7 @@ from ambient import Ambient
 from simulator import Simulator
 
 ## DADOS
-with open('dialux_data.json', 'r') as fp:
+with open('data/dialux_data.json', 'r') as fp:
     dialux_data_dict = json.load(fp)
 
 refletance_to_id_converter = {str(int(k) / 10): k for k in dialux_data_dict.keys()}

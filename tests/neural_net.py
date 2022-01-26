@@ -10,10 +10,10 @@ from sklearn.model_selection import train_test_split
 from sklearn.multioutput import MultiOutputRegressor
 from sklearn.neural_network import MLPRegressor
 
-filename = 'output.json'
+filename = 'data/output.json'
 with open(filename, 'r') as fp:
     data = json.load(fp)
-filename = 'temporal_results.json'
+filename = 'data/temporal_results.json'
 with open(filename, 'r') as fp:
     plane = json.load(fp)
 

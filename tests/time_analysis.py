@@ -19,7 +19,7 @@ if __name__ == "__main__":
                        'filter_3': {'low_cut': 3500.0,
                                     'high_cut': 4500.0,
                                     'order': 6}}
-    with open('temporal_results.json') as fp:
+    with open('data/temporal_results.json') as fp:
         sinal = json.load(fp)
     # Sample rate and desired cutoff frequencies (in Hz).
     raw_signal = sinal[str(0.0)][str(0.0)][:-1]
