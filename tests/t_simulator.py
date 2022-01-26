@@ -11,7 +11,6 @@ from simulator import Simulator
 with open('data/dialux_data.json', 'r') as fp:
     dialux_data_dict = json.load(fp)
 
-refletance_to_id_converter = {str(int(k) / 10): k for k in dialux_data_dict.keys()}
 ambient_sets = {
     'total_simulation_time': None,
     'ambient': {
@@ -42,7 +41,8 @@ ambient_sets = {
                                                  'high_cut': 2250.0,
                                                  'order': 5}}}
 }
-id = str(refletance_to_id_converter[str(ambient_sets['ambient']['walls_refletance'])])
+ambient_data = 'ambient_10x10_lamppeq_3x3x3'
+id = '0'
 dialux_results = dialux_data_dict[id]
 
 ## SIMULAÇÃO

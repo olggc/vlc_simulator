@@ -11,7 +11,7 @@ from ambient import Ambient
 
 
 class Simulator:
-    def __init__(self, ambient: Ambient):
+    def __init__(self, ambient: Ambient, randomness=False):
         self.total_time = ambient.total_time if ambient.total_time is not None else None
         self.horizontal_angles_reach = set()
         self.vertical_angles_reach = set()
@@ -24,6 +24,7 @@ class Simulator:
         self.sample_frequency = ambient.sample_frequency
         self.sensor = ambient.sensor
         self.results = dict()
+        self.randomness = randomness
         self.elapsed_time_vector = self._get_elapsed_time()
         # for idx in range(len(self.walls) - 1):
         #     if self.walls[idx] != self.walls[idx + 1]:
@@ -42,6 +43,10 @@ class Simulator:
         if self.ambient.refletance_aperture[0] <= a <= self.ambient.refletance_aperture[1]:
             return None, None
         return dist, a
+
+    @staticmethod
+    def random_value_generator():
+        return 0.05 * np.random.normal(loc=0.0, scale=1.0)
 
     def get_angles(self, x: float, y: float, lumie: Luminarie):
         dx = lumie.position['x'] - x
@@ -68,18 +73,25 @@ class Simulator:
 
     def __calculate_direct_iluminance(self, x, y, time: float) -> float:
         e = 0
+        noisy = 0
+        if self.randomness:
+            noisy = self.random_value_generator()
         for lum in self.luminaries:
-            factor = 0.5 * np.sign(sin(2 * pi * time * lum.wave_frequency))
+            factor = 0.05 * np.sign(sin(2 * pi * time * lum.wave_frequency))
             phi, theta, dist = self.get_angles(x, y, lum)
             if phi > lum.max_phi or theta > lum.max_theta:
                 continue
             ilu = lum.light_distribution[phi][theta]
             ilu = ilu / (dist ** 2)
-            e += ilu * (1 + factor)
+            e += ilu * (1 + factor + noisy)
         return e
 
     def __calculate_reflected_iluminance(self, x, y, time):
         e = 0
+        noisy = 0
+        if self.randomness:
+            noisy = self.random_value_generator()
+
         for index in range(len(self.walls)):
             w = self.walls[index]
             constant_axis, c = self.walls[index].constant_axis
@@ -99,7 +111,7 @@ class Simulator:
                     if dist == 0:
                         continue
                     ilu = wall_ilu[a][b]
-                    e += ilu * cos(radians(alpha)) / (dist ** 2)
+                    e += ilu * (1 + noisy) * cos(radians(alpha)) / (dist ** 2)
         return e
 
     def _get_elapsed_time(self):
@@ -165,6 +177,7 @@ class Simulator:
             fig.colorbar(surf, shrink=0.5, aspect=5)
 
             plt.show()
+
     def animate(self):
         for dt in self.results.keys():
             self.plotting(dt)

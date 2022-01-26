@@ -4,6 +4,7 @@ import numpy as np
 import json
 from ambient import Ambient
 from simulator import Simulator
+
 scale_factor = 3
 
 data_dir = 'data/'
@@ -14,9 +15,9 @@ ambient_sets = {
     'ambient': {
         'room_sizes': {'x': scale_factor * 1, 'y': scale_factor * 1, 'z': scale_factor * 1},
         'floor_level': 0,
-        'divisions_number': 10,
+        'divisions_number': 9,
         'sample_frequency': 100000,
-        'walls_refletance': 0.0,
+        'walls_refletance': 0.1,
         'refletance_aperture': None,
         'walls': [
             {'x': 0},
@@ -27,7 +28,7 @@ ambient_sets = {
     },
     'luminaries': {
         'positions': [
-            {'x': scale_factor * 0.49, 'y': scale_factor *0.24, 'z': scale_factor * 1},
+            {'x': scale_factor * 0.49, 'y': scale_factor * 0.24, 'z': scale_factor * 1},
             {'x': scale_factor * 0.24, 'y': scale_factor * 0.74, 'z': scale_factor * 1},
             {'x': scale_factor * 0.74, 'y': scale_factor * 0.74, 'z': scale_factor * 1}
         ],
