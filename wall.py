@@ -1,5 +1,6 @@
+from copy import deepcopy
 from dataclasses import dataclass
-from math import sqrt, acos, degrees, atan2, sin, pi
+from math import sqrt, acos, degrees, atan2, sin, pi, cos
 from typing import Dict, Optional, List
 from numpy import sign
 
@@ -13,18 +14,24 @@ class Wall:
     __iluminance_per_point: Dict
 
     def __init__(self, plane: Plane, luminaire: List[Luminarie], refletance: Optional[float] = None,
-                 sample_frequency: Optional[int] = None, total_time=None):
+                 sample_frequency: Optional[int] = None, total_time=None, wall_id: str = None):
         self.__total_time = total_time
         self.__sample_frequency = None if sample_frequency is None else sample_frequency
         self.__ellapsed_time_vector = self.__get_elapsed_time([lum.wave_frequency for lum in luminaire])
         self.__refletance = 0 if refletance is None else refletance
         self.__plane = plane
+        self.__wall_index = '' if wall_id is None else wall_id
         self.__constant_axis = plane.constant_axis
-        self.__iluminance_per_point = self.__set_wall_iluminance(luminaire) if refletance is not 0 else None
+        self.__iluminance_per_point = self.__set_wall_iluminance(luminaire) if refletance != 0 else None
+        self.__high_order_iluminance = deepcopy(self.__iluminance_per_point)
 
     @property
     def refletance(self):
         return self.__refletance
+
+    @property
+    def wall_index(self):
+        return self.__wall_index
 
     @property
     def constant_axis(self):
@@ -63,6 +70,15 @@ class Wall:
         _, idx_t = min([(abs(t - t_angle), n) for n, t_angle in enumerate(t_angles)], key=lambda a: a[0])
         t = t_angles[idx_t]
         return p, t, dist
+
+    def _get_angles(self, dx, dy, dz):
+        distance = (dx ** 2) + (dy ** 2) + (dz ** 2)
+        distance = sqrt(distance)
+        theta = degrees(acos(dz / distance))
+        theta = theta if theta > 0 or theta != 360 else 360 - abs(theta)
+        phi = degrees(atan2(dy, dx))
+        phi = phi if phi > 0 else 360 - abs(phi)
+        return phi, theta, distance
 
     def __calculate_direct_iluminance(self, lum: Luminarie, x: float, y: float, z: float, time: float):
         w = pi * time * lum.wave_frequency
@@ -106,6 +122,49 @@ class Wall:
             timed_iluminance_dict[dt] = iluminance_dict
         return timed_iluminance_dict
 
+    def _calculate_second_order_ilu(self, ilu, x, y, z, dt):
+        for a in self.wall_iluminace[dt]:
+            for b in self.wall_iluminace[dt][a].keys():
+                x1, y1, z1 = self._convert_plane_point_to_vector((a, b), self.constant_axis)
+                dx = x1 - x
+                dy = y1 - y
+                dz = z1 - z
+                ilu2 = self.__calculate_second_order_ilu(dx, dy, dz, ilu)
+                self.__high_order_iluminance[dt][a][b] += ilu2
+
+    def calculate_second_order_ilu(self, other_walls):
+        for wall in other_walls:
+            for dt in wall.wall_iluminace.keys():
+                for a in self.wall_iluminace[dt].keys():
+                    for b in self.wall_iluminace[dt][a].keys():
+                        i = self.wall_iluminace[dt][a][b]
+                        x0, y0, z0 = self._convert_plane_point_to_vector((a, b), wall.constant_axis)
+                        self._calculate_second_order_ilu(i, x0, y0, z0, dt)
+
+    def __calculate_second_order_ilu(self, dx, dy, dz, ilu):
+        phi, theta, distance = self._get_angles(dx, dy, dz)
+        scale = self.refletance * self.plane.diferential_area
+        a = cos(dz / distance)
+        e = (ilu * scale * a) / (4 * pi * (distance ** 2))
+        return e
+
+    def _convert_plane_point_to_vector(self, point: tuple, const_axis):
+        constant_axis, c = const_axis
+        a, b = point
+        if constant_axis is Axis.X.value:
+            x = c
+            y = a
+            z = b
+        elif constant_axis is Axis.Y.value:
+            x = a
+            y = c
+            z = b
+        elif constant_axis is Axis.Z.value:
+            x = a
+            y = b
+            z = c
+        return x, y, z
+
     @property
     def plane(self):
         return self.__plane
@@ -114,12 +173,21 @@ class Wall:
     def wall_iluminace(self):
         return self.__iluminance_per_point
 
+    def get_wall_iluminance(self, high_order=False):
+        if not high_order:
+            return self.wall_iluminace
+        else:
+            return self.__high_order_iluminance
+
     def __eq__(self, other: "Wall"):
-        for dt in self.wall_iluminace.keys():
-            for x in self.wall_iluminace[dt].keys():
-                for y in self.wall_iluminace[dt][x].keys():
-                    a = self.wall_iluminace[dt][x][y]
-                    b = other.wall_iluminace[dt][x][y]
-                    if a != b:
-                        return False
-        return True
+        return self.wall_index == other.wall_index
+
+    # def __eq__(self, other: "Wall"):
+    #     for dt in self.wall_iluminace.keys():
+    #         for x in self.wall_iluminace[dt].keys():
+    #             for y in self.wall_iluminace[dt][x].keys():
+    #                 a = self.wall_iluminace[dt][x][y]
+    #                 b = other.wall_iluminace[dt][x][y]
+    #                 if a != b:
+    #                     return False
+    #     return True

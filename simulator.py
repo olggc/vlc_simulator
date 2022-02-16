@@ -11,7 +11,7 @@ from ambient import Ambient
 
 
 class Simulator:
-    def __init__(self, ambient: Ambient, randomness=False):
+    def __init__(self, ambient: Ambient, randomness=False, allow_high_order=False):
         self.total_time = ambient.total_time if ambient.total_time is not None else None
         self.horizontal_angles_reach = set()
         self.vertical_angles_reach = set()
@@ -25,6 +25,7 @@ class Simulator:
         self.sensor = ambient.sensor
         self.results = dict()
         self.randomness = randomness
+        self.allow_high_order = allow_high_order
         self.elapsed_time_vector = self._get_elapsed_time()
         # for idx in range(len(self.walls) - 1):
         #     if self.walls[idx] != self.walls[idx + 1]:
@@ -95,7 +96,8 @@ class Simulator:
         for index in range(len(self.walls)):
             w = self.walls[index]
             constant_axis, c = self.walls[index].constant_axis
-            wall_ilu = self.walls[index].wall_iluminace[time]
+            wall_iluminance = self.walls[index].get_wall_iluminance(high_order=self.allow_high_order)
+            wall_ilu = wall_iluminance[time]
             for a in wall_ilu.keys():
                 for b in wall_ilu[a].keys():
                     if constant_axis is Axis.X.value:
