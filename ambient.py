@@ -71,12 +71,17 @@ class Ambient:
         self.__floor_level = constant_axis.copy()
         self.__plane = Plane(number_of_divisions=num, sizes=self.room_sizes, constant_axis=constant_axis)
 
-        for const_axis in ambient_settings['ambient']['walls']:
+        for w_id, const_axis in enumerate(ambient_settings['ambient']['walls']):
             plane = Plane(number_of_divisions=num, sizes=self.room_sizes, constant_axis=const_axis)
             wall = Wall(plane=plane, luminaire=self.luminaries,
                         refletance=ambient_settings['ambient']['walls_refletance'],
-                        sample_frequency=self.__sample_frequency, total_time=self.total_time)
+                        sample_frequency=self.__sample_frequency, total_time=self.total_time,
+                        wall_id=str(w_id))
             self.__walls.append(wall)
+
+        for wall in self.__walls:
+            other_walls = [w for w in self.__walls if not w == wall]
+            wall.calculate_second_order_ilu(other_walls)
 
         self.__sensor = Sensor(position=ambient_settings['sensor']['position'],
                                filter_parameters=ambient_settings['sensor']['filter_parameter'],
