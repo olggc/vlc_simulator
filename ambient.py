@@ -6,7 +6,8 @@ from sensor import Sensor
 
 
 class Ambient:
-    def __init__(self, ambient_settings):
+    def __init__(self, ambient_settings, high_order=False):
+        self.high_order = high_order
         self.__total_time = None
         self.__floor_level = {'z': 0}
         self.__sample_frequency = None
@@ -79,9 +80,10 @@ class Ambient:
                         wall_id=str(w_id))
             self.__walls.append(wall)
 
-        for wall in self.__walls:
-            other_walls = [w for w in self.__walls if not w == wall]
-            wall.calculate_second_order_ilu(other_walls)
+        if self.high_order:
+            for wall in self.__walls:
+                other_walls = [w for w in self.__walls if not w == wall]
+                wall.calculate_second_order_ilu(other_walls)
 
         self.__sensor = Sensor(position=ambient_settings['sensor']['position'],
                                filter_parameters=ambient_settings['sensor']['filter_parameter'],
