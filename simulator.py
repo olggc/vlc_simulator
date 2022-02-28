@@ -167,6 +167,9 @@ class Simulator:
         if graph_type == 'heatmap':
             ax = sb.heatmap(z_axis)
             ax.invert_yaxis()
+            ax.set_title('Simulator Iluminance[cd] Room Heatmap')
+            ax.set_xlabel('X points')
+            ax.set_ylabel('Y points')
             plt.show()
         if graph_type == 'surface':
             fig, ax = plt.subplots(subplot_kw={"projection": "3d"})
@@ -174,8 +177,13 @@ class Simulator:
             X = np.arange(0, n, 1)
             Y = np.arange(0, n, 1)
             X, Y = np.meshgrid(X, Y)
-            surf = ax.plot_surface(X, Y, z_axis, cmap=cm.coolwarm,
+            surf = ax.plot_surface(X, Y, z_axis, cmap='viridis',
+                                   edgecolor='none',
                                    linewidth=0, antialiased=False)
+            ax.set_title('Simulator Iluminance[cd] Room Distribution')
+            ax.set_xlabel('X points')
+            ax.set_ylabel('Y points')
+            ax.set_zlabel('Illuminance[cd]')
             fig.colorbar(surf, shrink=0.5, aspect=5)
 
             plt.show()
