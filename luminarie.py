@@ -139,7 +139,6 @@ class Luminarie:
                                                    hor_angles}
         for n, phi in enumerate(hor_angles):
             for m, theta in enumerate(ver_angles):
-                ies_dict[Keys.CANDELA_VALUES_SET.value][int(phi)][int(theta)] = float(
-                    self.potency_factor * candle_values[n * len(ver_angles) + m])
+                ies_dict[Keys.CANDELA_VALUES_SET.value][int(phi)][int(theta)] = float(candle_values[n * len(ver_angles) + m])
 
         return ies_dict

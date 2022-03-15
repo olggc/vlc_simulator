@@ -11,8 +11,9 @@ from ambient import Ambient
 
 
 class Simulator:
-    def __init__(self, ambient: Ambient, randomness=False, allow_high_order=False):
+    def __init__(self, ambient: Ambient, randomness=False, allow_high_order=False, neighbor_num=0):
         self.total_time = ambient.total_time if ambient.total_time is not None else None
+        self.neighbor_num = neighbor_num
         self.horizontal_angles_reach = set()
         self.vertical_angles_reach = set()
         self.pair_angles_reach = set()
@@ -49,7 +50,7 @@ class Simulator:
     def random_value_generator():
         return 0.05 * np.random.normal(loc=0.0, scale=1.0)
 
-    def get_angles(self, x: float, y: float, lumie: Luminarie):
+    def get_angles_knn(self, x: float, y: float, lumie: Luminarie):
         dx = lumie.position['x'] - x
         dy = lumie.position['y'] - y
         dz = lumie.position['z'] - self.ambient.floor_level['z']
@@ -62,15 +63,10 @@ class Simulator:
         p = p if p > 0 else 360 - abs(p)
 
         p_angles = [key for key in lumie.light_distribution.keys()]
-        _, idx_p = min([(abs(p - p_angle), n) for n, p_angle in enumerate(p_angles)], key=lambda a: a[0])
-        p = p_angles[idx_p]
-        t_angles = [key for key in lumie.light_distribution[p].keys()]
-        _, idx_t = min([(abs(t - t_angle), n) for n, t_angle in enumerate(t_angles)], key=lambda a: a[0])
-        t = t_angles[idx_t]
-        self.vertical_angles_reach.add(t)
-        self.horizontal_angles_reach.add(p)
-        self.pair_angles_reach.add((t, p))
-        return p, t, dist
+        any_key = p_angles[-1]
+        t_angles = [key for key in lumie.light_distribution[any_key].keys()]
+        ids_p, ids_t = self.do_knn(p, t, p_angles, t_angles, self.neighbor_num)
+        return ids_p, ids_t, dist
 
     def __calculate_direct_iluminance(self, x, y, time: float) -> float:
         e = 0
@@ -78,13 +74,17 @@ class Simulator:
         if self.randomness:
             noisy = self.random_value_generator()
         for lum in self.luminaries:
-            factor = 0.05 * np.sign(sin(2 * pi * time * lum.wave_frequency))
-            phi, theta, dist = self.get_angles(x, y, lum)
-            if phi > lum.max_phi or theta > lum.max_theta:
-                continue
-            ilu = lum.light_distribution[phi][theta]
-            ilu = ilu / (dist ** 2)
-            e += ilu * (1 + factor + noisy)
+            d = lum.position['z']
+            factor = lum.potency_factor * (1 + np.sign(sin(2 * pi * time * lum.wave_frequency)))
+            if self.neighbor_num > 0:
+                phi, theta, dist = self.get_angles_knn(x, y, lum)
+                ilu = self.knn_iluminace(lum.light_distribution, phi, theta, self.neighbor_num)
+            else:
+                phi, theta, dist = self.get_angles(x, y, lum)
+                ilu = lum.light_distribution[phi][theta]
+            cosphi = cos(radians(theta))
+            ilu = (ilu * cosphi) / (dist ** 2)
+            e += ilu * (factor + noisy)
         return e
 
     def __calculate_reflected_iluminance(self, x, y, time):
@@ -191,3 +191,52 @@ class Simulator:
     def animate(self):
         for dt in self.results.keys():
             self.plotting(dt)
+
+    @staticmethod
+    def do_knn(p, t, ps, ts, N):
+        nearest_ps = []
+        nearest_ts = []
+        N = min([len(ps), len(ts), N])
+        already_chosen_ps = []
+        already_chosen_ts = []
+        for k in range(0, N):
+            dif_i, i = min([(abs(p - p_angle), n) for n, p_angle in enumerate(ps) if p_angle not in already_chosen_ps], key=lambda a: a[0])
+            dif_j, j = min([(abs(t - t_angle), n) for n, t_angle in enumerate(ts) if t_angle not in already_chosen_ts], key=lambda a: a[0])
+            already_chosen_ps.append(ps[i])
+            already_chosen_ts.append(ts[j])
+            nearest_ps.append((ps[i], dif_i))
+            nearest_ts.append((ts[j], dif_j))
+
+        return nearest_ps, nearest_ts
+
+    def knn_iluminace(self, light_distribution, phi, theta, N):
+        i = 0
+        angles_combinations = list(zip(phi, theta))
+        total_weight = sum([sqrt((p[1] ** 2) + (t[1] ** 2)) for p, t in angles_combinations])
+        for ph, th in angles_combinations:
+            w = sqrt((ph[1] ** 2) + (th[1] ** 2)) / total_weight
+            i += (light_distribution[ph[0]][th[0]] * w)
+        return i
+
+    def get_angles(self, x: float, y: float, lumie: Luminarie):
+        dx = lumie.position['x'] - x
+        dy = lumie.position['y'] - y
+        dz = lumie.position['z'] - self.ambient.floor_level['z']
+        dist = (dx ** 2) + (dy ** 2) + (dz ** 2)
+        dist = sqrt(dist)
+
+        t = degrees(acos(dz / dist))
+        t = t if t > 0 or t != 360 else 360 - abs(t)
+        p = degrees(atan2(dy, dx))
+        p = p if p > 0 else 360 - abs(p)
+
+        p_angles = [key for key in lumie.light_distribution.keys()]
+        _, idx_p = min([(abs(p - p_angle), n) for n, p_angle in enumerate(p_angles)], key=lambda a: a[0])
+        p = p_angles[idx_p]
+        t_angles = [key for key in lumie.light_distribution[p].keys()]
+        _, idx_t = min([(abs(t - t_angle), n) for n, t_angle in enumerate(t_angles)], key=lambda a: a[0])
+        t = t_angles[idx_t]
+        self.vertical_angles_reach.add(t)
+        self.horizontal_angles_reach.add(p)
+        self.pair_angles_reach.add((t, p))
+        return p, t, dist

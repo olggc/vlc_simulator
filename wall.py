@@ -82,7 +82,7 @@ class Wall:
 
     def __calculate_direct_iluminance(self, lum: Luminarie, x: float, y: float, z: float, time: float):
         w = pi * time * lum.wave_frequency
-        factor = 0.5 * sign(sin(2 * w))  # uncomment this to temporal simulation
+        factor = lum.potency_factor * (1 + sign(sin(2 * w)))  # uncomment this to temporal simulation
         phi, theta, dist = self.get_angles(x, y, z, lum)
         if phi > lum.max_phi or theta > lum.max_theta:
             return 0

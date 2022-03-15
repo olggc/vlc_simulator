@@ -5,19 +5,19 @@ import json
 from ambient import Ambient
 from simulator import Simulator
 
-scale_factor = 3
+scale_factor = 4
 
 data_dir = 'data/'
 filename = 'temporal_results.json'
 
 ambient_sets = {
-    'total_simulation_time': None,
+    'total_simulation_time': 0.024,
     'ambient': {
         'room_sizes': {'x': scale_factor * 1, 'y': scale_factor * 1, 'z': scale_factor * 1},
         'floor_level': 0,
         'divisions_number': 9,
-        'sample_frequency': 100000,
-        'walls_refletance': 0.1,
+        'sample_frequency': 120000,
+        'walls_refletance': 0.0,
         'refletance_aperture': None,
         'walls': [
             {'x': 0},
