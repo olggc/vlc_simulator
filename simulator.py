@@ -79,6 +79,7 @@ class Simulator:
             if self.neighbor_num > 0:
                 phi, theta, dist = self.get_angles_knn(x, y, lum)
                 ilu = self.knn_iluminace(lum.light_distribution, phi, theta, self.neighbor_num)
+                theta = sum([th * diff for th, diff in theta]) / sum([d for _, d in theta])
             else:
                 phi, theta, dist = self.get_angles(x, y, lum)
                 ilu = lum.light_distribution[phi][theta]
@@ -147,6 +148,11 @@ class Simulator:
                     print(f'Direct Iluminace = {ilu}')
                     if not self.with_reflection:
                         continue
+                    if x < self.plane.discretization['x'] or y < self.plane.discretization['y']:
+                        continue
+                    if x > self.plane.sizes['x'] - self.plane.discretization['x'] \
+                            or y > self.plane.sizes['y'] - self.plane.discretization['y']:
+                        continue
                     plane_dict[x][y] += self.__calculate_reflected_iluminance(x, y, dt)
                     print(f'Indirect Iluminace = {ilu}')
             simulation_light_distribution[dt] = plane_dict
@@ -200,8 +206,10 @@ class Simulator:
         already_chosen_ps = []
         already_chosen_ts = []
         for k in range(0, N):
-            dif_i, i = min([(abs(p - p_angle), n) for n, p_angle in enumerate(ps) if p_angle not in already_chosen_ps], key=lambda a: a[0])
-            dif_j, j = min([(abs(t - t_angle), n) for n, t_angle in enumerate(ts) if t_angle not in already_chosen_ts], key=lambda a: a[0])
+            dif_i, i = min([(abs(p - p_angle), n) for n, p_angle in enumerate(ps) if p_angle not in already_chosen_ps],
+                           key=lambda a: a[0])
+            dif_j, j = min([(abs(t - t_angle), n) for n, t_angle in enumerate(ts) if t_angle not in already_chosen_ts],
+                           key=lambda a: a[0])
             already_chosen_ps.append(ps[i])
             already_chosen_ts.append(ts[j])
             nearest_ps.append((ps[i], dif_i))

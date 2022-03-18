@@ -1,6 +1,6 @@
 from copy import deepcopy
 from dataclasses import dataclass
-from math import sqrt, acos, degrees, atan2, sin, pi, cos
+from math import sqrt, acos, degrees, atan2, sin, pi, cos, radians
 from typing import Dict, Optional, List
 from numpy import sign
 
@@ -87,7 +87,7 @@ class Wall:
         if phi > lum.max_phi or theta > lum.max_theta:
             return 0
         ilu = lum.light_distribution[phi][theta]
-        scale = self.refletance * self.plane.diferential_area
+        scale = self.refletance * self.plane.diferential_area * cos(radians(theta))
         e = ilu * scale / (4 * pi * (dist ** 2))
         return e * (1 + factor)
 
@@ -96,12 +96,9 @@ class Wall:
         constant_axis, c = self.constant_axis
         axis_a = free_axis[0]
         axis_b = free_axis[1]
-        shift = self.plane.discretization / 2
         timed_iluminance_dict = {dt: None for dt in self.__ellapsed_time_vector}
         for dt in timed_iluminance_dict:
-            iluminance_dict = {
-                a + shift: {b + shift: 0 for b in self.plane.points[axis_b] if b < self.plane.sizes[axis_b]}
-                for a in self.plane.points[axis_a] if a < self.plane.sizes[axis_b]}
+            iluminance_dict = self.generate_illuminance_dict_shell(axis_a, axis_b)
             for lum in luminarie:
                 for a in iluminance_dict.keys():
                     for b in iluminance_dict[a].keys():
@@ -165,6 +162,13 @@ class Wall:
             z = c
         return x, y, z
 
+    def generate_illuminance_dict_shell(self, axis_a, axis_b):
+        dict_shell = {
+            a + self.plane.discretization[axis_a] / 2: {b + self.plane.discretization[axis_b] / 2: 0 for b in
+                                                        self.plane.points[axis_b] if b < self.plane.sizes[axis_b]}
+            for a in self.plane.points[axis_a] if a < self.plane.sizes[axis_a]}
+        return dict_shell
+
     @property
     def plane(self):
         return self.__plane
@@ -179,15 +183,15 @@ class Wall:
         else:
             return self.__high_order_iluminance
 
-    def __eq__(self, other: "Wall"):
-        return self.wall_index == other.wall_index
-
     # def __eq__(self, other: "Wall"):
-    #     for dt in self.wall_iluminace.keys():
-    #         for x in self.wall_iluminace[dt].keys():
-    #             for y in self.wall_iluminace[dt][x].keys():
-    #                 a = self.wall_iluminace[dt][x][y]
-    #                 b = other.wall_iluminace[dt][x][y]
-    #                 if a != b:
-    #                     return False
-    #     return True
+    #     return self.wall_index == other.wall_index
+
+    def __eq__(self, other: "Wall"):
+        for dt in self.wall_iluminace.keys():
+            for x in self.wall_iluminace[dt].keys():
+                for y in self.wall_iluminace[dt][x].keys():
+                    a = self.wall_iluminace[dt][x][y]
+                    b = other.wall_iluminace[dt][x][y]
+                    if a != b:
+                        return False
+        return True

@@ -11,6 +11,7 @@ class Axis(enum.Enum):
 class Plane:
     def __init__(self, number_of_divisions, sizes, constant_axis, refletance=None):
         self.__axis = [axis.value for axis in Axis]
+        self.discretization = dict()
         self.__constant_axis: Dict[str, float] = constant_axis
         self._number_of_divisions: int = number_of_divisions
         self._sizes: Dict[str, float] = sizes
@@ -25,8 +26,8 @@ class Plane:
         for axis in points.keys():
             if axis in self.__constant_axis.keys():
                 continue
-            self.discretization = self._sizes[axis] / self._number_of_divisions
-            points[axis] = [k * self.discretization for k in
+            self.discretization[axis] = self._sizes[axis] / self._number_of_divisions
+            points[axis] = [k * self.discretization[axis] for k in
                             range(self._number_of_divisions + 1)]
         return points
 
