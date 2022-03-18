@@ -5,15 +5,16 @@ import json
 from ambient import Ambient
 from simulator import Simulator
 
-scale_factor = 4
-
+scale_factor_x = 4
+scale_factor_y = 4
+scale_factor_z = 2.5
 data_dir = 'data/'
 filename = 'temporal_results.json'
 
 ambient_sets = {
     'total_simulation_time': 0.024,
     'ambient': {
-        'room_sizes': {'x': scale_factor * 1, 'y': scale_factor * 1, 'z': scale_factor * 1},
+        'room_sizes': {'x': scale_factor_x * 1, 'y': scale_factor_y * 1, 'z': scale_factor_z * 1},
         'floor_level': 0,
         'divisions_number': 9,
         'sample_frequency': 120000,
@@ -21,16 +22,16 @@ ambient_sets = {
         'refletance_aperture': None,
         'walls': [
             {'x': 0},
-            {'x': scale_factor * 1},
+            {'x': scale_factor_x * 1},
             {'y': 0},
-            {'y': scale_factor * 1}
+            {'y': scale_factor_y * 1}
         ]
     },
     'luminaries': {
         'positions': [
-            {'x': scale_factor * 0.49, 'y': scale_factor * 0.24, 'z': scale_factor * 1},
-            {'x': scale_factor * 0.24, 'y': scale_factor * 0.74, 'z': scale_factor * 1},
-            {'x': scale_factor * 0.74, 'y': scale_factor * 0.74, 'z': scale_factor * 1}
+            {'x': scale_factor_x * 0.49, 'y': scale_factor_y * 0.24, 'z': scale_factor_z * 1},
+            {'x': scale_factor_x * 0.24, 'y': scale_factor_y * 0.74, 'z': scale_factor_z * 1},
+            {'x': scale_factor_x * 0.74, 'y': scale_factor_y * 0.74, 'z': scale_factor_z * 1}
         ],
         'ies_file_path': data_dir + 'LampPeq.txt',
         'modulation_frequencies': [2000, 3000, 4000]

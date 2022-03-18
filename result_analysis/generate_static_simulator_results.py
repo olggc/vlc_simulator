@@ -64,6 +64,7 @@ def get_results(data):
     key_values = [(x, y) for x in r.keys() for y in r[x].keys()]
     res = [r[x][y] for x, y in key_values]
     result_simulator = np.array(res)
+    dialux_results = np.array(dialux_results)
     # error dialux
     erro1_list = np.subtract(dialux_results, result_simulator)
     m_erro1 = [abs(e) / dialux_results[n] for n, e in enumerate(erro1_list)]
@@ -72,7 +73,7 @@ def get_results(data):
     median_relative_error1 = median(m_erro1)
     # erro relux
     erro2_list = np.subtract(relux_results, result_simulator)
-    m_erro2 = [abs(e) / relux_results[n] for n, e in enumerate(erro1_list)]
+    m_erro2 = [abs(e) / relux_results[n] for n, e in enumerate(erro2_list)]
     mean_relative_error2 = mean(m_erro2)
     std_relative_error2 = stdev(m_erro2)
     median_relative_error2 = median(m_erro2)
@@ -140,6 +141,6 @@ def get_results(data):
 
 
 if __name__ == '__main__':
-    amb_id = 'amb1di2'
+    amb_id = 'amb2ai2'
     d = prepare_data(amb_id)
     get_results(d)
