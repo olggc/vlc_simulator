@@ -7,31 +7,36 @@ import numpy as np
 """
     Data structure file to all types of ambients sets
 """
+scale_factor_x = 4
+scale_factor_y = 4
+scale_factor_z = 2.5
 
 amb1ai0 = {
-    'total_simulation_time': None,  # None para simulação estática
+    'total_simulation_time': None,
     'ambient': {
-        'room_sizes': {'x': 5, 'y': 2, 'z': 2.5},  # comprimento, largura e alture
-        'floor_level': 0,  # altura do chão
-        'divisions_number': 9,  # numero de divisões ex: para 10 x 10 a simulação deve ter 9 divisões
-        'sample_frequency': 100000,  # frequencia da simulação
-        'walls_refletance': 0.7,  # refletancia das paredes
-        'refletance_aperture': None,  # abertura da reflexão pode ser limitada
-        'walls': [  # planos das paredes
+        'room_sizes': {'x': scale_factor_x * 1, 'y': scale_factor_y * 1, 'z': scale_factor_z * 1},
+        'floor_level': 0,
+        'divisions_number': 9,
+        'sample_frequency': 120000,
+        'walls_refletance': 0.0,
+        'refletance_aperture': None,
+        'walls': [
             {'x': 0},
-            {'x': 5},
+            {'x': scale_factor_x * 1},
             {'y': 0},
-            {'y': 2}
+            {'y': scale_factor_y * 1}
         ]
     },
     'luminaries': {
-        'positions': [  # posição das luminárias um dict para cada posição
-            {'x': 5 * 0.5, 'y': 2 * 0.5, 'z': 1 * 2.5}
+        'positions': [
+            {'x': scale_factor_x * 0.24, 'y': scale_factor_y * 0.74, 'z': scale_factor_z * 1},
+            {'x': scale_factor_x * 0.49, 'y': scale_factor_y * 0.24, 'z': scale_factor_z * 1},
+            {'x': scale_factor_x * 0.74, 'y': scale_factor_y * 0.74, 'z': scale_factor_z * 1}
         ],
-        'ies_file_path': 'LampPeq.txt',  # arquivo ies da lampada
-        'modulation_frequencies': [2000]  # frequencias de cada luminária
+        'ies_file_path': 'LampPeq.txt',
+        'modulation_frequencies': [2000, 3000, 4000]
     },
-    'sensor': {'position': {'x': 0, 'y': 0, 'z': 0},  # posição inicial do sensor
+    'sensor': {'position': {'x': 0, 'y': 0, 'z': 0},
                'filter_parameter': {'filter_1': {'low_cut': 1500.0,
                                                  'high_cut': 2250.0,
                                                  'order': 5}}}

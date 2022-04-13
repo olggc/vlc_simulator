@@ -1,6 +1,6 @@
 from copy import deepcopy
 from dataclasses import dataclass
-from math import sqrt, acos, degrees, atan2, sin, pi, cos, radians
+from math import sqrt, acos, degrees, atan2, sin, pi, cos, radians, asin
 from typing import Dict, Optional, List
 from numpy import sign
 
@@ -34,6 +34,10 @@ class Wall:
         return self.__wall_index
 
     @property
+    def min_discretization(self):
+        return min(self.plane.discretization.values())
+
+    @property
     def constant_axis(self):
         constant = [axis.value for axis in Axis if axis.value in self.__constant_axis.keys()]
         return constant[0], self.__constant_axis[constant[0]]
@@ -62,14 +66,15 @@ class Wall:
         t = t if t > 0 or t != 360 else 360 - abs(t)
         p = degrees(atan2(dy, dx))
         p = p if p > 0 else 360 - abs(p)
-
+        o = degrees(asin(dz / dist))
+        o = o if o > 0 or o != 360 else 360 - abs(o)
         p_angles = [key for key in lumie.light_distribution.keys()]
         _, idx_p = min([(abs(p - p_angle), n) for n, p_angle in enumerate(p_angles)], key=lambda a: a[0])
         p = p_angles[idx_p]
         t_angles = [key for key in lumie.light_distribution[p].keys()]
         _, idx_t = min([(abs(t - t_angle), n) for n, t_angle in enumerate(t_angles)], key=lambda a: a[0])
         t = t_angles[idx_t]
-        return p, t, dist
+        return p, t, dist, o
 
     def _get_angles(self, dx, dy, dz):
         distance = (dx ** 2) + (dy ** 2) + (dz ** 2)
@@ -83,11 +88,11 @@ class Wall:
     def __calculate_direct_iluminance(self, lum: Luminarie, x: float, y: float, z: float, time: float):
         w = pi * time * lum.wave_frequency
         factor = lum.potency_factor * (1 + sign(sin(2 * w)))  # uncomment this to temporal simulation
-        phi, theta, dist = self.get_angles(x, y, z, lum)
+        phi, theta, dist, omega = self.get_angles(x, y, z, lum)
         if phi > lum.max_phi or theta > lum.max_theta:
             return 0
         ilu = lum.light_distribution[phi][theta]
-        scale = self.refletance * self.plane.diferential_area * cos(radians(theta))
+        scale = self.refletance * cos(radians(omega)) * self.plane.diferential_area
         e = ilu * scale / (4 * pi * (dist ** 2))
         return e * (1 + factor)
 
@@ -140,8 +145,8 @@ class Wall:
 
     def __calculate_second_order_ilu(self, dx, dy, dz, ilu):
         phi, theta, distance = self._get_angles(dx, dy, dz)
-        scale = self.refletance * self.plane.diferential_area
-        a = cos(dz / distance)
+        scale = self.refletance
+        a = dz / distance
         e = (ilu * scale * a) / (4 * pi * (distance ** 2))
         return e
 
@@ -164,8 +169,8 @@ class Wall:
 
     def generate_illuminance_dict_shell(self, axis_a, axis_b):
         dict_shell = {
-            a + self.plane.discretization[axis_a] / 2: {b + self.plane.discretization[axis_b] / 2: 0 for b in
-                                                        self.plane.points[axis_b] if b < self.plane.sizes[axis_b]}
+            a: {b: 0 for b in
+                self.plane.points[axis_b] if b < self.plane.sizes[axis_b]}
             for a in self.plane.points[axis_a] if a < self.plane.sizes[axis_a]}
         return dict_shell
 

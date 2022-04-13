@@ -39,7 +39,7 @@ class Simulator:
         dist = sqrt(dist)
         if dist == 0:
             return 0, None
-        a = degrees(asin(dz / dist))
+        a = degrees(acos(dz / dist))
         if self.ambient.refletance_aperture is None:
             return dist, a
         if self.ambient.refletance_aperture[0] <= a <= self.ambient.refletance_aperture[1]:
@@ -79,11 +79,11 @@ class Simulator:
             if self.neighbor_num > 0:
                 phi, theta, dist = self.get_angles_knn(x, y, lum)
                 ilu = self.knn_iluminace(lum.light_distribution, phi, theta, self.neighbor_num)
-                theta = sum([th * diff for th, diff in theta]) / sum([d for _, d in theta])
+                omega = sum([th * diff for th, diff in theta]) / sum([d for _, d in theta])
             else:
-                phi, theta, dist = self.get_angles(x, y, lum)
+                phi, theta, dist, omega = self.get_angles(x, y, lum)
                 ilu = lum.light_distribution[phi][theta]
-            cosphi = cos(radians(theta))
+            cosphi = cos(radians(omega))
             ilu = (ilu * cosphi) / (dist ** 2)
             e += ilu * (factor + noisy)
         return e
@@ -113,8 +113,17 @@ class Simulator:
                     dist, alpha = self._get_angles(dx, dy, dz)
                     if dist == 0:
                         continue
+                    if (dx == 0) or (dy == 0) or (dz == 0):
+                        continue
+                    if dist >= max(self.plane.sizes.values()):
+                        continue
+                    if dist <= max(self.plane.discretization.values()):
+                        continue
+                    if dist <= max([w.min_discretization for w in self.walls]):
+                        continue
                     ilu = wall_ilu[a][b]
-                    e += ilu * (1 + noisy) * cos(radians(alpha)) / (dist ** 2)
+                    scale = (1 + noisy) * cos(radians(alpha))
+                    e += ilu * scale / (dist ** 2)
         return e
 
     def _get_elapsed_time(self):
@@ -148,11 +157,11 @@ class Simulator:
                     print(f'Direct Iluminace = {ilu}')
                     if not self.with_reflection:
                         continue
-                    if x < self.plane.discretization['x'] or y < self.plane.discretization['y']:
-                        continue
-                    if x > self.plane.sizes['x'] - self.plane.discretization['x'] \
-                            or y > self.plane.sizes['y'] - self.plane.discretization['y']:
-                        continue
+                    # if x < self.plane.discretization['x'] or y < self.plane.discretization['y']:
+                    #     continue
+                    # if x > self.plane.sizes['x'] - self.plane.discretization['x'] \
+                    #         or y > self.plane.sizes['y'] - self.plane.discretization['y']:
+                    #     continue
                     plane_dict[x][y] += self.__calculate_reflected_iluminance(x, y, dt)
                     print(f'Indirect Iluminace = {ilu}')
             simulation_light_distribution[dt] = plane_dict
@@ -161,35 +170,43 @@ class Simulator:
         self.results = simulation_light_distribution
         return simulation_light_distribution
 
-    def f(self, dt):
-        z_axis = np.array([self.results[dt][x][y]
-                           for x in self.plane.points['x']
-                           for y in self.plane.points['y']])
-        z_axis = z_axis.reshape((len(self.plane.points['x']), len(self.plane.points['y'])))
-        return z_axis.T
+    def f(self, dt, with_numpy=True):
+        if with_numpy:
+            z_axis = np.array([self.results[dt][x][y]
+                               for x in self.plane.points['x']
+                               for y in self.plane.points['y']])
+            z_axis = z_axis.reshape((len(self.plane.points['x']), len(self.plane.points['y'])))
+            return z_axis.T
+        else:
+            z_values = [self.results[dt][x][y]
+                        for x in self.plane.points['x']
+                        for y in self.plane.points['y']]
+            return z_values
 
     def plotting(self, dt=0, graph_type='surface'):
         z_axis = self.f(dt)
         if graph_type == 'heatmap':
             ax = sb.heatmap(z_axis)
             ax.invert_yaxis()
-            ax.set_title('Simulator Iluminance[cd] Room Heatmap')
+            ax.set_title(f'Mapa de Calor para t = {round(dt * 100000, 4)} us')
             ax.set_xlabel('X points')
             ax.set_ylabel('Y points')
             plt.show()
+            plt.pause(0.1)
+            plt.close()
         if graph_type == 'surface':
             fig, ax = plt.subplots(subplot_kw={"projection": "3d"})
             n = len(self.plane.points['x'])
-            X = np.arange(0, n, 1)
-            Y = np.arange(0, n, 1)
+            X = np.arange(0, 1, 1 / n)
+            Y = np.arange(0, 1, 1 / n)
             X, Y = np.meshgrid(X, Y)
             surf = ax.plot_surface(X, Y, z_axis, cmap='viridis',
                                    edgecolor='none',
                                    linewidth=0, antialiased=False)
-            ax.set_title('Simulator Iluminance[cd] Room Distribution')
-            ax.set_xlabel('X points')
-            ax.set_ylabel('Y points')
-            ax.set_zlabel('Illuminance[cd]')
+            ax.set_title('Simulador - Distribuição de Iluminância no Ambiente')
+            ax.set_xlabel('X')
+            ax.set_ylabel('Y')
+            ax.set_zlabel('Illuminance[lx]')
             fig.colorbar(surf, shrink=0.5, aspect=5)
 
             plt.show()
@@ -237,7 +254,8 @@ class Simulator:
         t = t if t > 0 or t != 360 else 360 - abs(t)
         p = degrees(atan2(dy, dx))
         p = p if p > 0 else 360 - abs(p)
-
+        o = degrees((acos(dz / dist)))
+        o = o if o > 0 or o != 360 else 360 - abs(o)
         p_angles = [key for key in lumie.light_distribution.keys()]
         _, idx_p = min([(abs(p - p_angle), n) for n, p_angle in enumerate(p_angles)], key=lambda a: a[0])
         p = p_angles[idx_p]
@@ -247,4 +265,4 @@ class Simulator:
         self.vertical_angles_reach.add(t)
         self.horizontal_angles_reach.add(p)
         self.pair_angles_reach.add((t, p))
-        return p, t, dist
+        return p, t, dist, o

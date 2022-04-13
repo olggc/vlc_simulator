@@ -11,6 +11,7 @@ class Axis(enum.Enum):
 class Plane:
     def __init__(self, number_of_divisions, sizes, constant_axis, refletance=None):
         self.__axis = [axis.value for axis in Axis]
+        self.half_board = dict()
         self.discretization = dict()
         self.__constant_axis: Dict[str, float] = constant_axis
         self._number_of_divisions: int = number_of_divisions
@@ -20,15 +21,25 @@ class Plane:
         self.__incident_luminance: Dict = self.__default_luminance()
         self.__refletance: float = refletance
 
-    def __calculate_plane_points(self):
+    def __calculate_plane_points(self, half_board=True):
         points = {axis: [] for axis in self.__axis if axis not in self.__constant_axis.keys()}
-
-        for axis in points.keys():
-            if axis in self.__constant_axis.keys():
-                continue
-            self.discretization[axis] = self._sizes[axis] / self._number_of_divisions
-            points[axis] = [k * self.discretization[axis] for k in
-                            range(self._number_of_divisions + 1)]
+        if half_board:
+            for axis in points.keys():
+                if axis in self.__constant_axis.keys():
+                    continue
+                self.discretization[axis] = self._sizes[axis] / self._number_of_divisions
+                half = self.discretization[axis] / 2
+                self.half_board[axis] = half
+                self.discretization[axis] = (self._sizes[axis] - self.discretization[axis]) / self._number_of_divisions
+                points[axis] = [(k * self.discretization[axis]) + half for k in
+                                range(self._number_of_divisions + 1)]
+        else:
+            for axis in points.keys():
+                if axis in self.__constant_axis.keys():
+                    continue
+                self.discretization[axis] = self._sizes[axis] / self._number_of_divisions
+                points[axis] = [k * self.discretization[axis] for k in
+                                range(self._number_of_divisions + 1)]
         return points
 
     def __calculate_area(self):
