@@ -82,7 +82,10 @@ class Simulator:
                 omega = sum([th * diff for th, diff in theta]) / sum([d for _, d in theta])
             else:
                 phi, theta, dist, omega = self.get_angles(x, y, lum)
-                ilu = lum.light_distribution[phi][theta]
+                if theta > lum.aperture / 2:
+                    ilu = 0
+                else:
+                    ilu = lum.light_distribution[phi][theta]
             cosphi = cos(radians(omega))
             ilu = (ilu * cosphi) / (dist ** 2)
             e += ilu * (factor + noisy)

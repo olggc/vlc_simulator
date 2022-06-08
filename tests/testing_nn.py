@@ -25,7 +25,7 @@ def predict_with_nn(nn, positions, plane, iluminance_data):
     return predicted
 
 
-def train_net(train, save_with_pickle, load_from_pickle):
+def train_net(train, save_with_pickle, load_from_pickle, num_points):
     filename = 'data/output_100x100_lampeq.json'
     with open(filename, 'r') as fp:
         data = json.load(fp)
@@ -75,11 +75,11 @@ def train_net(train, save_with_pickle, load_from_pickle):
             with open(f'nn_model_{t}.sav', 'wb') as fp:
                 pickle.dump(mlpr, fp)
     if len(load_from_pickle) != 0:
-        with open(load_from_pickle, 'rb') as fo:
-            mlpr = pickle.load(load_from_pickle)
+        filename = 'nn_model_2022-04-13.sav'
+        mlpr = pickle.load(open(filename, 'rb'))
         ymlpr = mlpr.predict(x_test1)
 
-    rand_range = 25
+    rand_range = min(num_points, len(y_test1))
     rand_indices = [randint(0, len(y_test1)) for _ in range(rand_range)]
     x1, y1 = ([y_test1[i][0] for i in rand_indices], [y_test1[i][1] for i in rand_indices])
     x2, y2 = ([ymlpr[i][0] for i in rand_indices], [ymlpr[i][1] for i in rand_indices])
@@ -114,7 +114,8 @@ def generateData():
 if __name__ == "__main__":
     neural_net, plane, iluminatio_data = train_net(train=False,
                                                    load_from_pickle='nn_model_2022-04-13.sav',
-                                                   save_with_pickle=False)
+                                                   save_with_pickle=False,
+                                                   num_points=45)
     # position_history = generateData()
     # predictions = predict_with_nn(neural_net, position_history, plane, iluminatio_data)
     # xs = []

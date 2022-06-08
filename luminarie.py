@@ -34,12 +34,15 @@ class Luminarie:
     __ies_file_dict: Dict
     max_phi: int
     max_theta: int
+    aperture: float
 
-    def __init__(self, ies_file_path=None, wave_frequency: int = None, position=None, lums=None, potency_factor=1):
+    def __init__(self, ies_file_path=None, wave_frequency: int = None, position=None, lums=None, potency_factor=1,
+                 aperture=None):
         self.potency_factor = potency_factor
         self.__ies_file_dict = self.load_ies_file_into_dict(ies_file_path) if lums is None else None
         self.light_distribution = self.__ies_file_dict[Keys.CANDELA_VALUES_SET.value] if lums is None else lums
         self.wave_frequency = wave_frequency
+        self.aperture = None if aperture is None else aperture
         self.position = position
         self.max_phi = max(list(self.light_distribution.keys()))
         self.max_theta = max(list(self.light_distribution[self.max_phi].keys()))
@@ -139,6 +142,7 @@ class Luminarie:
                                                    hor_angles}
         for n, phi in enumerate(hor_angles):
             for m, theta in enumerate(ver_angles):
-                ies_dict[Keys.CANDELA_VALUES_SET.value][int(phi)][int(theta)] = float(candle_values[n * len(ver_angles) + m])
+                ies_dict[Keys.CANDELA_VALUES_SET.value][int(phi)][int(theta)] = float(
+                    candle_values[n * len(ver_angles) + m])
 
         return ies_dict

@@ -1,19 +1,18 @@
 import json
 from math import sqrt
-from statistics import mean
+from statistics import mean, stdev
 
 import numpy as np
 import matplotlib.pyplot as plt
-from numpy.core import std
 from sklearn.metrics import accuracy_score, mean_absolute_error, mean_squared_error, r2_score
 from sklearn.model_selection import train_test_split, GridSearchCV
 from sklearn.multioutput import MultiOutputRegressor
 from sklearn.neural_network import MLPRegressor
 
-filename = 'data/output.json'
+filename = 'data/output_100x100_lampeq.json'
 with open(filename, 'r') as fp:
     data = json.load(fp)
-filename = 'data/temporal_results.json'
+filename = 'data/temporal_results_100x100_lampeq.json'
 with open(filename, 'r') as fp:
     plane = json.load(fp)
 
@@ -75,7 +74,7 @@ r2s_mlpr = r2_score(y_test1, ymlpr)
 distance_error = np.subtract(y_test1, ymlpr)
 distance_error = [sqrt((point[0] ** 2) + (point[1] ** 2)) for point in distance_error]
 max_distance_error = max(distance_error)
-std_distance_error = std(distance_error)
+std_distance_error = stdev(distance_error)
 mean_distance_error = mean(distance_error)
 print("Mean Absolute Error: ", mae_mlpr)
 print("Mean Squared Error: ", mse_mlpr)

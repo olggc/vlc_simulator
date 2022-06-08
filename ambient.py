@@ -61,9 +61,11 @@ class Ambient:
         self.__refletance_aperture = aperture if aperture is not None else self.__refletance_aperture
         self.__sample_frequency = ambient_settings['ambient']['sample_frequency']
         lums_position = ambient_settings['luminaries']['positions']
+        lum_aperture = ambient_settings['luminaries'].get('luminarie_aperture')
         for n, pos in enumerate(lums_position):
-            lumie = Luminarie(ies_file_path=ambient_settings['luminaries']['ies_file_path'],
-                              wave_frequency=ambient_settings['luminaries']['modulation_frequencies'][n], position=pos)
+            lumie = Luminarie(ies_file_path=pos['ies_file_path'],
+                              wave_frequency=ambient_settings['luminaries']['modulation_frequencies'][n], position=pos,
+                              aperture=lum_aperture)
             self.__lumies.append(lumie)
 
         num = ambient_settings['ambient']['divisions_number']
